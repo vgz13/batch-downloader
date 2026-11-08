@@ -122,7 +122,9 @@ class App:
         # sesuaikan dengan layar (laptop 768px pun muat)
         sh = root.winfo_screenheight()
         self.small = sh < 900
-        root.geometry(f"940x{min(880, sh - 90)}")
+        h = min(880, sh - (130 if self.small else 90))       # sisakan ruang untuk taskbar/Dock
+        x = max(0, (root.winfo_screenwidth() - 940) // 2)
+        root.geometry(f"940x{h}+{x}+{0 if self.small else 40}")
         root.minsize(760, min(600, sh - 90))
 
         self.v_out = tk.StringVar(value=cfg.get("out", DEFAULT_OUT))

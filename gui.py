@@ -15,6 +15,12 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from types import SimpleNamespace
 
+# Aplikasi berjendela (.exe tanpa konsol) tidak punya stdout/stderr → arahkan ke devnull sebelum modul lain dimuat
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
+
 IS_MAC, IS_WIN = sys.platform == "darwin", sys.platform.startswith("win")
 FROZEN = getattr(sys, "frozen", False)            # True kalau dijalankan sebagai .exe (PyInstaller)
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))

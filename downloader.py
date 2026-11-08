@@ -210,7 +210,7 @@ class Progress:
         self.bytes = 0
         self.active: dict[int, str] = {}
         self.t0 = time.time()
-        self.tty = sys.stdout.isatty()
+        self.tty = bool(sys.stdout) and sys.stdout.isatty()   # .exe tanpa konsol: stdout = None
         self._stop = threading.Event()
         self.cancel = threading.Event()   # di-set oleh tombol Stop (GUI) / Ctrl+C
         self.sink = None                  # callback log untuk GUI; None = print ke terminal

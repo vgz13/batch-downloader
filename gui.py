@@ -119,8 +119,11 @@ class App:
                 self.logo_img = self.icon_img.subsample(4)   # 64 px untuk judul
             except tk.TclError:
                 pass
-        root.geometry("940x880")
-        root.minsize(760, 640)
+        # sesuaikan dengan layar (laptop 768px pun muat)
+        sh = root.winfo_screenheight()
+        self.small = sh < 900
+        root.geometry(f"940x{min(880, sh - 90)}")
+        root.minsize(760, min(600, sh - 90))
 
         self.v_out = tk.StringVar(value=cfg.get("out", DEFAULT_OUT))
         self.v_workers = tk.IntVar(value=cfg.get("workers", 3))
@@ -168,7 +171,7 @@ class App:
         box1.grid(row=1, column=0, sticky="nsew", pady=(14, 0))
         box1.columnconfigure(0, weight=1)
         box1.rowconfigure(0, weight=1)
-        self.links = tk.Text(box1, height=9, wrap="none", font=(MONO, 12), undo=True,
+        self.links = tk.Text(box1, height=7, wrap="none", font=(MONO, 12), undo=True,
                              relief="solid", borderwidth=1, padx=8, pady=6)
         self.links.grid(row=0, column=0, sticky="nsew")
         self.fg = self.links.cget("foreground")
@@ -247,6 +250,13 @@ class App:
                   ).grid(row=6, column=0, columnspan=5, sticky="w", pady=(6, 0))
         self._video_status()
 
+        # opsi Google Drive (API key, cookies) bisa dilipat supaya muat di layar kecil
+        self._gd_widgets = [w for r in (1, 2, 3) for w in box3.grid_slaves(row=r)]
+        self.v_gdopts = tk.BooleanVar(value=not self.small)
+        self.gd_toggle = ttk.Checkbutton(box3, variable=self.v_gdopts, command=self._toggle_gd)
+        self.gd_toggle.grid(row=7, column=0, columnspan=5, sticky="w", pady=(8, 0))
+        self._toggle_gd()
+
         # ── tombol aksi ──
         act = ttk.Frame(outer)
         act.grid(row=4, column=0, sticky="ew", pady=(14, 0))
@@ -282,8 +292,8 @@ class App:
         self.log.bind("<Double-Button-1>", self._reveal_log_line)
         ttk.Label(outer, text=f"Tip: klik dua kali baris ✓ di log untuk menampilkan file itu di {FM}.",
                   foreground="#8a8a8a").grid(row=7, column=0, sticky="w", pady=(4, 0))
-        outer.rowconfigure(1, weight=3)
-        outer.rowconfigure(6, weight=2)
+        outer.rowconfigure(1, weight=3, minsize=170)   # kotak link tidak boleh hilang
+        outer.rowconfigure(6, weight=2, minsize=70)
 
         draft = cfg.get("links", "")
         if draft.strip():
@@ -394,6 +404,14 @@ class App:
             self.v_keymsg.set("⚠ Gagal menyimpan")
 
     # ── video ──
+    def _toggle_gd(self):
+        show = self.v_gdopts.get()
+        for w in self._gd_widgets:
+            w.grid() if show else w.grid_remove()
+        saved = " · 🔑 API key tersimpan" if self.v_apikey.get().strip() else ""
+        self.gd_toggle.configure(text=("Sembunyikan" if show else "Tampilkan") +
+                                 f" opsi Google Drive (API key, cookies){saved}")
+
     def _quality_key(self) -> str:
         return next((k for k, v in D.QUALITY_LABELS.items() if v == self.v_quality.get()), "best")
 

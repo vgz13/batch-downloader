@@ -1,0 +1,30 @@
+# Build BatchDownloader.exe otomatis di server Windows GitHub (gratis).
+# Jalankan dari tab Actions → "Build Windows EXE" → Run workflow, lalu unduh artifact-nya.
+name: Build Windows EXE
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pyinstaller requests yt-dlp keyring
+      - name: Build exe
+        run: >
+          python -m PyInstaller --noconfirm --clean --onefile --windowed
+          --name BatchDownloader --icon assets/icon.ico
+          --add-data "assets/icon_256.png;assets"
+          --collect-all yt_dlp --hidden-import keyring.backends.Windows
+          gui.py
+      - name: Smoke test (import)
+        run: python -c "import sys; sys.path.insert(0,'.'); import downloader; print('ok')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BatchDownloader-windows
+          path: dist/BatchDownloader.exe

@@ -1,0 +1,10 @@
+# Daftar link — 1 link per baris. Baris diawali # diabaikan.
+# Opsional: tambahkan " | nama/subfolder" untuk menaruh hasilnya di subfolder tertentu.
+#
+# Contoh:
+# https://drive.google.com/drive/folders/XXXXXXXX
+# https://drive.google.com/file/d/XXXXXXXX/view | Font
+# https://www.dropbox.com/scl/fo/XXXX/XXXX?rlkey=XXXX&dl=0 | Mockup
+# https://www.mediafire.com/folder/XXXX/Nama
+# https://mega.nz/folder/XXXX#XXXX | Video
+# https://contoh.com/file.zip

@@ -569,44 +569,82 @@ class App:
 
 
 def selftest(report: str):
-    """Uji otomatis tanpa interaksi (dipakai CI): `BatchDownloader.exe --selftest hasil.json`."""
+    """Uji otomatis tanpa interaksi (dipakai CI): `BatchDownloader.exe --selftest hasil.json`.
+    Hasil ditulis setelah setiap langkah, dan tiap langkah punya batas waktu, supaya macet pun tetap terlihat."""
     import tempfile
     import time
-    res = {"platform": sys.platform, "frozen": FROZEN, "python": sys.version.split()[0]}
-    try:
+    rp = Path(report).resolve()
+    res: dict = {"platform": sys.platform, "frozen": FROZEN, "python": sys.version.split()[0]}
+    log: list[str] = []
+
+    def save():
+        res["log_tail"] = log[-30:]
+        rp.write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    def step(name, fn, timeout):
+        res[name] = "running"
+        save()
+        box = {}
+
+        def run():
+            try:
+                box["v"] = fn()
+            except Exception as e:  # noqa: BLE001
+                box["v"] = f"ERROR {e!r}"
+        t0 = time.time()
+        th = threading.Thread(target=run, daemon=True)
+        th.start()
+        th.join(timeout)
+        res[name] = box.get("v", f"TIMEOUT setelah {timeout}s")
+        if isinstance(res[name], dict):
+            res[name]["secs"] = round(time.time() - t0, 1)
+        if th.is_alive():
+            D.P.cancel.set()
+        save()
+
+    def gui_test():
         root = tk.Tk()
         App(root)
         root.update()
-        res["gui"] = "ok"
         root.destroy()
+        return "ok"
+
+    def key_test():
+        ok = D.keychain_set("dummy", "selftest") and D.keychain_get("selftest") == "dummy"
+        D.keychain_set("", "selftest")
+        return "ok" if ok else "FAIL"
+
+    res["gui"] = "running"   # Tk wajib di thread utama
+    save()
+    try:
+        res["gui"] = gui_test()
     except Exception as e:  # noqa: BLE001
         res["gui"] = f"ERROR {e!r}"
-    acc = "selftest"
-    res["keystore"] = "ok" if D.keychain_set("dummy", acc) and D.keychain_get(acc) == "dummy" else "FAIL"
-    D.keychain_set("", acc)
+    save()
+    step("keystore", key_test, 30)
     res["ytdlp"] = D.ytdlp_available()
     res["ffmpeg"] = bool(D.FFMPEG)
     out = Path(tempfile.mkdtemp(prefix="bd-selftest-"))
     opts = SimpleNamespace(workers=3, retries=1, quota_wait=10.0, max_wait=30.0, gdrive_delay=1.0,
                            gdrive_api_key=None, cookies=None, keep_zip=False, dry_run=False,
                            video_quality="480", cookies_browser=None)
+    D.P.sink = log.append
     tests = {
-        "gdrive_folder": "https://drive.google.com/drive/folders/1KpLl_1tcK0eeehzN980zbG-3M2nhbVks",
         "direct_link": "https://raw.githubusercontent.com/python/cpython/main/README.rst",
+        "gdrive_folder": "https://drive.google.com/drive/folders/1KpLl_1tcK0eeehzN980zbG-3M2nhbVks",
         "youtube": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
     }
-    log: list[str] = []
-    D.P.sink = log.append
     for name, url in tests.items():
-        t0 = time.time()
-        try:
+        D.P.cancel.clear()
+
+        def dl(url=url, name=name):
             r = D.run_batch([(url, Path(name))], out, opts)
-            res[name] = {"done": r["done"], "failed": r["failed"], "secs": round(time.time() - t0, 1)}
-        except Exception as e:  # noqa: BLE001
-            res[name] = f"ERROR {e!r}"
+            return {"done": r["done"], "failed": r["failed"]}
+        step(name, dl, 120)
     res["files"] = sorted(str(p.relative_to(out)).replace("\\", "/") for p in out.rglob("*") if p.is_file())
-    res["log_tail"] = log[-25:]
-    Path(report).write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
+    res["finished"] = True
+    save()
+    os._exit(0)  # jangan tunggu thread yang mungkin masih macet
 
 
 def main():

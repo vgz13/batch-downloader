@@ -26,8 +26,10 @@ jobs:
         shell: pwsh
         run: |
           $p = Start-Process -FilePath dist\BatchDownloader.exe -ArgumentList "--selftest","selftest.json" -PassThru
-          if (-not $p.WaitForExit(300000)) { $p.Kill(); throw "self-test timeout" }
-          Get-Content selftest.json
+          $done = $p.WaitForExit(600000)
+          if (-not $done) { $p.Kill() }
+          if (Test-Path selftest.json) { Get-Content selftest.json } else { Write-Host "selftest.json tidak dibuat" }
+          if (-not $done) { throw "self-test timeout" }
       - name: Screenshot jendela aplikasi
         shell: pwsh
         run: |

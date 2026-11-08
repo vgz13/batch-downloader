@@ -568,7 +568,52 @@ class App:
         self.root.destroy()
 
 
+def selftest(report: str):
+    """Uji otomatis tanpa interaksi (dipakai CI): `BatchDownloader.exe --selftest hasil.json`."""
+    import tempfile
+    import time
+    res = {"platform": sys.platform, "frozen": FROZEN, "python": sys.version.split()[0]}
+    try:
+        root = tk.Tk()
+        App(root)
+        root.update()
+        res["gui"] = "ok"
+        root.destroy()
+    except Exception as e:  # noqa: BLE001
+        res["gui"] = f"ERROR {e!r}"
+    acc = "selftest"
+    res["keystore"] = "ok" if D.keychain_set("dummy", acc) and D.keychain_get(acc) == "dummy" else "FAIL"
+    D.keychain_set("", acc)
+    res["ytdlp"] = D.ytdlp_available()
+    res["ffmpeg"] = bool(D.FFMPEG)
+    out = Path(tempfile.mkdtemp(prefix="bd-selftest-"))
+    opts = SimpleNamespace(workers=3, retries=1, quota_wait=10.0, max_wait=30.0, gdrive_delay=1.0,
+                           gdrive_api_key=None, cookies=None, keep_zip=False, dry_run=False,
+                           video_quality="480", cookies_browser=None)
+    tests = {
+        "gdrive_folder": "https://drive.google.com/drive/folders/1KpLl_1tcK0eeehzN980zbG-3M2nhbVks",
+        "direct_link": "https://raw.githubusercontent.com/python/cpython/main/README.rst",
+        "youtube": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+    }
+    log: list[str] = []
+    D.P.sink = log.append
+    for name, url in tests.items():
+        t0 = time.time()
+        try:
+            r = D.run_batch([(url, Path(name))], out, opts)
+            res[name] = {"done": r["done"], "failed": r["failed"], "secs": round(time.time() - t0, 1)}
+        except Exception as e:  # noqa: BLE001
+            res[name] = f"ERROR {e!r}"
+    res["files"] = sorted(str(p.relative_to(out)).replace("\\", "/") for p in out.rglob("*") if p.is_file())
+    res["log_tail"] = log[-25:]
+    Path(report).write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def main():
+    if "--selftest" in sys.argv:
+        i = sys.argv.index("--selftest")
+        selftest(sys.argv[i + 1] if len(sys.argv) > i + 1 else "selftest.json")
+        return
     root = tk.Tk()
     style = ttk.Style(root)
     for theme in ("aqua", "vista", "clam"):

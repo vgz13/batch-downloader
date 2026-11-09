@@ -42,12 +42,43 @@ jobs:
           $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           $bmp.Save("screenshot.png")
           Stop-Process -Id $p.Id -Force
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          $ver = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart("v") } else { "1.1" }
+          & $iscc "/DAppVersion=$ver" installer.iss
+          if (-not (Test-Path Output\BatchDownloader-Setup.exe)) { throw "installer tidak terbentuk" }
+      - name: Test install, jalankan, uninstall
+        shell: pwsh
+        run: |
+          $p = Start-Process Output\BatchDownloader-Setup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/CURRENTUSER","/TASKS=desktopicon","/LOG=setup.log" -PassThru -Wait
+          Write-Host "setup exit: $($p.ExitCode)"
+          $app = "$env:LOCALAPPDATA\Programs\Batch Downloader"
+          if (-not (Test-Path "$app\BatchDownloader.exe")) { Get-Content setup.log -Tail 30; throw "exe tidak terpasang" }
+          $lnk = Get-ChildItem "$env:APPDATA\Microsoft\Windows\Start Menu\Programs" -Recurse -Filter "Batch Downloader.lnk"
+          $desk = Test-Path "$env:USERPROFILE\Desktop\Batch Downloader.lnk"
+          Write-Host "start menu shortcut: $($lnk.Count -gt 0) | desktop shortcut: $desk"
+          $t = Start-Process "$app\BatchDownloader.exe" -ArgumentList "--selftest","installed-selftest.json" -PassThru
+          if (-not $t.WaitForExit(300000)) { $t.Kill(); throw "aplikasi terpasang macet" }
+          Get-Content installed-selftest.json | Select-String '"gui"|"keystore"|"finished"'
+          Start-Process "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
+          Start-Sleep -Seconds 3
+          Write-Host "setelah uninstall, exe masih ada: $(Test-Path "$app\BatchDownloader.exe")"
+          if (Test-Path "$app\BatchDownloader.exe") { throw "uninstall gagal" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BatchDownloader-Setup
+          path: Output/BatchDownloader-Setup.exe
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: selftest
           path: |
             selftest.json
+            installed-selftest.json
+            setup.log
             screenshot.png
       - uses: actions/upload-artifact@v4
         with:

@@ -52,7 +52,7 @@ jobs:
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
-          $ver = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart("v") } else { "1.1" }
+          $ver = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart("v") } else { "1.2" }
           & $iscc "/DAppVersion=$ver" installer.iss
           if (-not (Test-Path Output\BatchDownloader-Setup.exe)) { throw "installer tidak terbentuk" }
       - name: Test install, jalankan, uninstall

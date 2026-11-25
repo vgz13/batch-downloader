@@ -53,15 +53,15 @@ gap = dilate(arrow, s(14))
 white = ImageChops.lighter(ImageChops.subtract(cloud, gap), ImageChops.subtract(tray, gap))
 white = ImageChops.lighter(white, arrow)
 
-# perkecil & geser ke kiri-bawah supaya pojok kanan atas kosong untuk petir
-K = 0.8
+# perkecil sedikit (tetap di tengah) supaya pojok kanan atas lega untuk petir
+K = 0.78
 def place(m, ocx, ocy, ncx, ncy, k=K):
     return m.transform(m.size, Image.AFFINE, (1 / k, 0, s(ocx) - s(ncx) / k, 0, 1 / k, s(ocy) - s(ncy) / k),
                        resample=Image.BICUBIC)
-white = place(white, 512, 510, 468, 578)
+white = place(white, 512, 510, 512, 530)
 
 # petir berdiri sendiri di pojok kanan atas, terpisah dari awan
-bx, by, bk = s(752), s(268), 0.78
+bx, by, bk = s(775), s(245), 0.7
 pts = [(44, -124), (-62, 18), (0, 18), (-40, 124), (66, -20), (6, -20)]
 bolt = blank(); ImageDraw.Draw(bolt).polygon([(bx + s(x * bk), by + s(y * bk)) for x, y in pts], fill=255)
 white = ImageChops.lighter(white, bolt)

@@ -165,6 +165,34 @@ def labeled_row(master, label, widget_factory):
     return row
 
 
+def theme_icon(kind: str, px: int = 18):
+    """Gambar ikon matahari / bulan (tanpa file aset) supaya tajam di Mac & Windows."""
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        return None
+    s = px * 4
+
+    def draw(color):
+        im = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        if kind == "sun":
+            import math
+            c, r = s / 2, s * 0.2
+            d.ellipse((c - r, c - r, c + r, c + r), fill=color)
+            for i in range(8):
+                a = i * math.pi / 4
+                x1, y1 = c + math.cos(a) * s * 0.31, c + math.sin(a) * s * 0.31
+                x2, y2 = c + math.cos(a) * s * 0.44, c + math.sin(a) * s * 0.44
+                d.line((x1, y1, x2, y2), fill=color, width=max(2, s // 14))
+        else:
+            d.ellipse((s * 0.12, s * 0.12, s * 0.88, s * 0.88), fill=color)
+            d.ellipse((s * 0.34, s * 0.02, s * 1.04, s * 0.72), fill=(0, 0, 0, 0))
+        return im.resize((px * 2, px * 2), Image.LANCZOS)
+
+    return ctk.CTkImage(light_image=draw(TEXT[0]), dark_image=draw(TEXT[1]), size=(px, px))
+
+
 # ───────────────────────── aplikasi ─────────────────────────
 
 class App:
@@ -178,7 +206,11 @@ class App:
 
         if os.environ.get("BD_THEME") in ("light", "dark"):   # dipakai CI untuk screenshot kedua tema
             cfg["theme"] = os.environ["BD_THEME"]
-        ctk.set_appearance_mode({"light": "light", "dark": "dark"}.get(cfg.get("theme"), "system"))
+        theme = cfg.get("theme")
+        if theme not in ("light", "dark"):   # pertama kali dibuka: ikuti tema sistem, setelah itu pakai pilihanmu
+            theme = "dark" if ctk.get_appearance_mode().lower() == "dark" else "light"
+        self.theme = theme
+        ctk.set_appearance_mode(theme)
         root.title(APP)
         root.configure(fg_color=BG)
         self._set_icons()
@@ -199,7 +231,6 @@ class App:
                          "Edge": "edge", "Brave": "brave", "Opera": "opera", "Vivaldi": "vivaldi"}
         self.v_browser = tk.StringVar(value=next((k for k, v in self.browsers.items()
                                                    if v == cfg.get("cookies_browser")), "Tidak pakai"))
-        self.v_theme = tk.StringVar(value={"light": "Terang", "dark": "Gelap"}.get(cfg.get("theme"), "Sistem"))
         self.last_out: Path | None = None
         # API key disimpan di Keychain / Credential Manager (bukan file teks). Pindahkan key lama kalau ada.
         old = cfg.pop("api_key", "")
@@ -267,15 +298,25 @@ class App:
         ctk.CTkLabel(t, text=APP, font=font(22, "bold"), text_color=TEXT, anchor="w").pack(anchor="w")
         ctk.CTkLabel(t, text="Drive · Dropbox · OneDrive · MediaFire · MEGA · YouTube, Instagram, TikTok & ±1800 situs",
                      font=font(12), text_color=MUTED, anchor="w").pack(anchor="w")
-        ctk.CTkSegmentedButton(head, values=["Sistem", "Terang", "Gelap"], variable=self.v_theme,
-                               command=self._set_theme, font=font(12), height=28,
-                               selected_color=ACCENT, selected_hover_color=ACCENT_HOVER,
-                               unselected_color=SUBTLE_BTN, unselected_hover_color=SUBTLE_HOVER,
-                               text_color=TEXT).pack(side="right")
+        self.theme_btn = ctk.CTkButton(head, text="", width=36, height=36, corner_radius=18,
+                                       fg_color=SUBTLE_BTN, hover_color=SUBTLE_HOVER, command=self._toggle_theme)
+        self.theme_btn.pack(side="right")
+        self._theme_icon()
 
-    def _set_theme(self, label):
-        ctk.set_appearance_mode({"Terang": "light", "Gelap": "dark"}.get(label, "system"))
+    def _toggle_theme(self):
+        self.theme = "light" if self.theme == "dark" else "dark"
+        ctk.set_appearance_mode(self.theme)
+        self._theme_icon()
         self.persist()
+
+    def _theme_icon(self):
+        """Mode terang → ikon bulan (klik untuk gelap); mode gelap → ikon matahari (klik untuk terang)."""
+        img = theme_icon("sun" if self.theme == "dark" else "moon")
+        if img:
+            self._theme_img = img
+            self.theme_btn.configure(image=img, text="")
+        else:
+            self.theme_btn.configure(text="☀" if self.theme == "dark" else "☾", font=font(16), text_color=TEXT)
 
     # ── kiri atas: link ──
     def _build_links(self, parent):
@@ -529,7 +570,7 @@ class App:
                   "retries": self._int(self.v_retries, 6), "keep_zip": self.v_keepzip.get(),
                   "cookies": self.v_cookies.get().strip(), "auto_open": self.v_autoopen.get(),
                   "video_quality": self._quality_key(), "cookies_browser": self.browsers.get(self.v_browser.get()),
-                  "theme": {"Terang": "light", "Gelap": "dark"}.get(self.v_theme.get(), "system"),
+                  "theme": self.theme,
                   "links": self.links_text()})
 
     # ── API key: simpan otomatis setiap kali diubah ──

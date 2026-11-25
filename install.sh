@@ -36,7 +36,7 @@ cat > "$TMP/Contents/Info.plist" <<'EOF'
   <key>CFBundleExecutable</key><string>BatchDownloader</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.2</string>
+  <key>CFBundleShortVersionString</key><string>1.3</string>
   <key>LSMinimumSystemVersion</key><string>11.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

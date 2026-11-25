@@ -3,7 +3,7 @@
 # Hasil: dist/BatchDownloader-<versi>.dmg
 set -e
 SRC="$(cd "$(dirname "$0")" && pwd)"
-VER="1.2"
+VER="1.3"
 STAGE="$(mktemp -d)/Batch Downloader"
 mkdir -p "$STAGE" "$SRC/dist"
 

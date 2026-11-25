@@ -587,15 +587,35 @@ def _ydl_error(e: Exception) -> Exception:
     return FatalError(msg[:240])
 
 
+def _is_youtube_playlist(url: str) -> bool:
+    u = urlparse(url)
+    host = u.netloc.lower().split(":")[0]
+    if not (host == "youtu.be" or host == "youtube.com" or host.endswith(".youtube.com")):
+        return False
+    return "list" in parse_qs(u.query) or u.path.rstrip("/") == "/playlist"
+
+
 def video_resolve(url: str, base: Path, depth: int = 0) -> list[Job]:
     """Baca info link video. Playlist/channel/album → satu subfolder berisi tiap video."""
     import yt_dlp
     opts = _ydl_base_opts() | {"extract_flat": "in_playlist", "skip_download": True}
+    yt_one = depth == 0 and _is_youtube_playlist(url)
+    if yt_one:   # playlist YouTube → cukup 1 video (video yang dibuka, atau video pertama)
+        opts |= {"noplaylist": True, "playlist_items": "1"}
     try:
         with yt_dlp.YoutubeDL(opts) as y:
             info = y.extract_info(url, download=False, process=True)
     except yt_dlp.utils.DownloadError as e:
         raise _ydl_error(e)
+    if yt_one and info.get("_type") in ("playlist", "multi_video"):
+        e = next((e for e in (info.get("entries") or []) if e), None)
+        if not e:
+            raise FatalError("playlist kosong atau tidak bisa dibaca")
+        u = e.get("url") or e.get("webpage_url") or ""
+        if not u.startswith("http"):
+            u = e.get("webpage_url") or f"https://www.youtube.com/watch?v={e.get('id') or u}"
+        P.log("  ▶ playlist YouTube → hanya 1 video")
+        return [Job(u, base, None, "video", source=u, meta={"title": e.get("title") or u})]
     if info.get("_type") in ("playlist", "multi_video"):
         title = sanitize(info.get("title") or info.get("id") or "playlist")
         here = base / title

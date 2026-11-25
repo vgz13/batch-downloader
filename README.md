@@ -32,7 +32,7 @@ Link, folder, dan pengaturan terakhir otomatis diingat di `~/Library/Application
 Tempel link video di kotak yang sama dengan link Drive/Dropbox. Aplikasi otomatis mengenali link dari **±1800 situs** yang didukung [yt-dlp](https://github.com/yt-dlp/yt-dlp), mesin yang dipakai di balik layar.
 
 - **Kualitas**: Terbaik, 1080p, 720p, 480p, atau **Audio saja (MP3)**. Kualitas tertinggi dan MP3 butuh `ffmpeg` (sudah terpasang: `brew install ffmpeg`).
-- **Playlist / channel / album** otomatis menjadi subfolder, misalnya `Tujuan/<Nama Playlist>/<Judul> [id].mp4`.
+- **Playlist YouTube** hanya mengunduh **1 video**: video yang dibuka di link (`watch?v=…&list=…`), atau video pertama kalau link-nya halaman playlist. Channel/album situs lain tetap menjadi subfolder, misalnya `Tujuan/<Nama>/<Judul> [id].mp4`.
 - **Instagram, Facebook, video privat, atau yang dibatasi umur**: pilih **Login dari browser** (Chrome/Safari/Firefox/…) yang sudah login ke situs itu. Login dibaca langsung dari browser di Mac ini dan tidak dikirim ke tempat lain. Untuk Safari, macOS mungkin meminta izin *Full Disk Access*.
 - Video yang sudah pernah diunduh dicatat di `.video-archive.txt` (atau `.audio-archive.txt`) di folder tujuan, jadi dilewati saat dijalankan ulang.
 - Situs sering berubah. Kalau tiba-tiba gagal, klik **Update mesin video**, lalu buka ulang aplikasi.

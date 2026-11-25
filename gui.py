@@ -604,8 +604,8 @@ class App:
         import yt_dlp
         hint = "winget install ffmpeg" if IS_WIN else "brew install ffmpeg"
         ff = "ffmpeg siap" if D.FFMPEG else f"ffmpeg belum ada ({hint}) untuk kualitas tertinggi & MP3"
-        self.vid_info.configure(text=f"yt-dlp {yt_dlp.version.__version__} · {ff}. Playlist & channel jadi "
-                                     f"subfolder. IG/FB/video privat: pilih browser yang sudah login.")
+        self.vid_info.configure(text=f"yt-dlp {yt_dlp.version.__version__} · {ff}. Playlist YouTube: 1 video "
+                                     f"saja. IG/FB/video privat: pilih browser yang sudah login.")
 
     def update_ytdlp(self):
         self.b_upd.configure(state="disabled", text="Memperbarui…")

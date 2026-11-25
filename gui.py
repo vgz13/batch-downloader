@@ -42,7 +42,8 @@ PLACEHOLDER = ("Tempel link di sini, satu per baris.\n\n"
                "https://drive.google.com/drive/folders/XXXX\n"
                "https://www.dropbox.com/scl/fo/XXXX?rlkey=XXXX | Mockup\n"
                "https://www.youtube.com/watch?v=XXXX\n\n"
-               "Tambahkan  | nama folder  di belakang link untuk menaruh hasilnya di subfolder.")
+               "Tambahkan  | nama folder  di belakang link\n"
+               "untuk menaruh hasilnya di subfolder.")
 
 # ── palet (terang, gelap) ──
 ACCENT = ("#1769E0", "#3B8BF5")

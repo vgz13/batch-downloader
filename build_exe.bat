@@ -7,12 +7,14 @@ REM  Hasil: dist\BatchDownloader.exe
 REM ============================================================
 cd /d "%~dp0"
 py -3 -m pip install --upgrade pip
-py -3 -m pip install --upgrade pyinstaller requests yt-dlp keyring
+py -3 -m pip install --upgrade pyinstaller requests yt-dlp keyring customtkinter pillow
 py -3 -m PyInstaller --noconfirm --clean --onefile --windowed ^
   --name BatchDownloader ^
   --icon assets\icon.ico ^
   --add-data "assets\icon_256.png;assets" ^
+  --add-data "assets\icon.ico;assets" ^
   --collect-all yt_dlp ^
+  --collect-data customtkinter ^
   --hidden-import keyring.backends.Windows ^
   gui.py
 echo.

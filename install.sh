@@ -12,7 +12,7 @@ TMP="$(mktemp -d)/Batch Downloader.app"
 
 mkdir -p "$TMP/Contents/MacOS" "$TMP/Contents/Resources/app/assets"
 cp "$SRC/downloader.py" "$SRC/gui.py" "$SRC/find_python.sh" "$TMP/Contents/Resources/app/"
-cp "$SRC/assets/icon_256.png" "$TMP/Contents/Resources/app/assets/"
+cp "$SRC/assets/icon_256.png" "$SRC/assets/icon.ico" "$TMP/Contents/Resources/app/assets/"
 cp "$SRC/assets/AppIcon.icns" "$TMP/Contents/Resources/AppIcon.icns"
 
 cat > "$TMP/Contents/MacOS/BatchDownloader" <<'EOF'

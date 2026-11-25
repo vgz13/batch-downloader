@@ -53,26 +53,25 @@ gap = dilate(arrow, s(14))
 white = ImageChops.lighter(ImageChops.subtract(cloud, gap), ImageChops.subtract(tray, gap))
 white = ImageChops.lighter(white, arrow)
 
+# perkecil & geser ke kiri-bawah supaya pojok kanan atas kosong untuk petir
+K = 0.8
+def place(m, ocx, ocy, ncx, ncy, k=K):
+    return m.transform(m.size, Image.AFFINE, (1 / k, 0, s(ocx) - s(ncx) / k, 0, 1 / k, s(ocy) - s(ncy) / k),
+                       resample=Image.BICUBIC)
+white = place(white, 512, 510, 468, 578)
+
+# petir berdiri sendiri di pojok kanan atas, terpisah dari awan
+bx, by, bk = s(752), s(268), 0.78
+pts = [(44, -124), (-62, 18), (0, 18), (-40, 124), (66, -20), (6, -20)]
+bolt = blank(); ImageDraw.Draw(bolt).polygon([(bx + s(x * bk), by + s(y * bk)) for x, y in pts], fill=255)
+white = ImageChops.lighter(white, bolt)
+
 # bayangan lembut di bawah elemen putih
 sh = solid((140, 70, 0), white.point(lambda a: int(a * 0.45)))
 sh = sh.transform(sh.size, Image.AFFINE, (1, 0, 0, 0, 1, -s(12))).filter(ImageFilter.GaussianBlur(s(14)))
 masked = Image.new("RGBA", (SS, SS), (0, 0, 0, 0)); masked.paste(sh, (0, 0), body)
 canvas = Image.alpha_composite(canvas, masked)
 canvas = Image.alpha_composite(canvas, solid((255, 255, 255), white))
-
-# lencana petir di pojok kanan atas
-bx, by, br = s(808), s(216), s(128)
-badge = blank(); ImageDraw.Draw(badge).ellipse((bx - br, by - br, bx + br, by + br), fill=255)
-ring = dilate(badge, s(16))
-bsh = solid((90, 45, 0), badge.point(lambda a: int(a * 0.5)))
-bsh = bsh.transform(bsh.size, Image.AFFINE, (1, 0, 0, 0, 1, -s(10))).filter(ImageFilter.GaussianBlur(s(16)))
-canvas = Image.alpha_composite(canvas, bsh)
-canvas = Image.alpha_composite(canvas, solid((255, 255, 255), ring))
-canvas = Image.alpha_composite(canvas, solid((32, 26, 18), badge))
-bolt = blank()
-pts = [(52, -112), (-58, 16), (2, 16), (-38, 118), (68, -18), (9, -18), (52, -112)]
-ImageDraw.Draw(bolt).polygon([(bx + s(x), by + s(y)) for x, y in pts], fill=255)
-canvas = Image.alpha_composite(canvas, solid((255, 205, 30), bolt))
 
 canvas.resize((1024, 1024), Image.LANCZOS).save(out)
 print("saved", out)

@@ -2,6 +2,10 @@
 
 Unduh banyak aset sekaligus dari **Google Drive, Dropbox, OneDrive/SharePoint, MediaFire, MEGA**, dan link langsung (http/https). Struktur folder dari sumber ikut dibuat ulang di komputer kamu.
 
+| Mode terang | Mode gelap |
+|---|---|
+| ![Batch Downloader mode terang](docs/screenshot-light.png) | ![Batch Downloader mode gelap](docs/screenshot-dark.png) |
+
 ## Instalasi di Mac
 Aplikasi sudah terpasang di **/Applications/Batch Downloader.app** dan bisa dibuka dari Launchpad, Spotlight, atau Finder → Applications. Versi ini mandiri: semua kodenya ada di dalam `.app`, jadi tetap jalan walaupun SSD ini dicabut.
 
